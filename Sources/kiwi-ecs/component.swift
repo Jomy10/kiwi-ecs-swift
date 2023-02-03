@@ -9,17 +9,18 @@ public protocol Component {
 	/// A unique id for this component
 	static var kId: ComponentId { get }
 	/// **Don't override, unless you know what you're doing**
+	@available(*, deprecated)
 	static var __id: ComponentId { get }
 	/// The size in bytes of this component
-	static var __size: Int { get }
+	// static var __size: Int { get }
 }
 
-@usableFromInline
-var componentIds: [Int:Int] = [:]
-@usableFromInline
-var componentIdCounter = 0
-@usableFromInline
-var componentSizes: [Int:Int] = [:]
+// @usableFromInline
+// var componentIds: [Int:Int] = [:]
+// @usableFromInline
+// var componentIdCounter = 0
+// @usableFromInline
+// var componentSizes: [Int:Int] = [:]
 extension Component {
 	@inlinable
 	static var kId: ComponentId {
@@ -30,21 +31,22 @@ extension Component {
 
 	@inlinable
 	static var __id: ComponentId {
-		componentIds[self.kId] ?? {
-			componentIds[self.kId] = componentIdCounter
-			componentIdCounter += 1
-			return componentIdCounter - 1
-		}()
+		return self.kId
+		// componentIds[self.kId] ?? {
+		// 	componentIds[self.kId] = componentIdCounter
+		// 	componentIdCounter += 1
+		// 	return componentIdCounter - 1
+		// }()
 	}
 
-	@inlinable
-	static var __size: Int {
-		componentSizes[self.kId] ?? {
-			let size = MemoryLayout<Self>.size
-			componentSizes[self.kId] = size
-			return size
-		}()
-	}
+	// @inlinable
+	// static var __size: Int {
+	// 	componentSizes[self.kId] ?? {
+	// 		let size = MemoryLayout<Self>.size
+	// 		componentSizes[self.kId] = size
+	// 		return size
+	// 	}()
+	// }
 }
 
 //=======

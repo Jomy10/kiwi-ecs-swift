@@ -7,13 +7,14 @@ typealias ArchRowId = UInt32
 
 /// Contains the component values for all entities in an archetype of one
 /// type of component
-fileprivate struct ComponentColumn {
-	var components: [UInt8]
-	let componentSize: Int
+fileprivate struct ComponentColumn<T> {
+	var components: [T]
+	// let componentSize: Int
 
-	init(size: Int) {
+	// init(size: Int) {
+	init() {
 		self.components = []
-		self.componentSize = size
+		// self.componentSize = size
 	}
 }
 
@@ -22,20 +23,29 @@ fileprivate struct ComponentColumn {
 //===========
 
 struct Archetype {
-	private var components: [ComponentId: ComponentColumn]
+	/// { id => ComponentColumn }
+	private var components: [ComponentId: UnsafeMutableRawPointer]
 	private var availableEntityRows: [ArchRowId]
 	private var entities: [EntityId]
 }
 
 internal extension Archetype {
-	/// sizes: sizes in bytes of the components
-	init(components: [ComponentId], sizes: [Int]) {
-		self.components = Dictionary<ComponentId, ComponentColumn>(minimumCapacity: components.count)
+	/// - components: the ids of the components
+	init(components: [ComponentId]) {//, sizes: [Int]) {
+		self.components = Dictionary<ComponentId, UnsafeMutableRawPointer>(minimumCapacity: components.count)
 		self.availableEntityRows = []
 		self.entities = []
+
+		let compColumns = UnsafeMutablePointer<ComponentColumn<Any>>.allocate(capacity: components.count)
 		components.enumerated().forEach { (i, compId) in
-			self.components[compId] = ComponentColumn(size: sizes[i])
+			let ptr = compColumns.advanced(by: i)
+			ptr.pointee = ComponentColumn()
+			self.components[compId] = UnsafeMutableRawPointer(ptr)
 		}
+	}
+
+	func dealloc() {
+		todo()
 	}
 
 	/// Get an empty entity archrow id
@@ -63,59 +73,76 @@ internal extension Archetype {
 	// }
 
 	@inlinable
-	mutating func setComponent(row: ArchRowId, id compId: Int, component: UnsafeRawPointer) {
-		withUnsafeMutablePointer(to: &self.components[compId]!) { columnPtr in
-			let componentSize = columnPtr.pointee.componentSize
-			let i = Int(row) * componentSize
-
-			let componentBytes = UnsafeRawBufferPointer(
-				start: component,
-				count: componentSize
-			)
-			
-			if columnPtr.pointee.components.count <= i + componentSize {
-				columnPtr.pointee.components.reserveCapacity(i + componentSize)
-				columnPtr.pointee.components.append(contentsOf: componentBytes)
-			} else {
-				componentBytes.enumerated().forEach { (idx, byte) in
-					columnPtr.pointee.components[i + idx] = byte
-				}
-			}
+	mutating func setComponent<T: Component>(row: ArchRowId, component: T) throws {
+		guard let ptr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component \(component) (\(T.kId)) cannot be assigned to the entity because it does not have the specified component")
 		}
+
+		if ptr.pointee.components.count <= row {
+			ptr.pointee.components.append(component)
+		} else {
+			ptr.pointee.components[Int(row)] = component
+		}
+		// withUnsafeMutablePointer(to: &self.components[compId]!) { columnPtr in
+		// 	let componentSize = columnPtr.pointee.componentSize
+		// 	let i = Int(row) * componentSize
+
+		// 	let componentBytes = UnsafeRawBufferPointer(
+		// 		start: component,
+		// 		count: componentSize
+		// 	)
+			
+		// 	if columnPtr.pointee.components.count <= i + componentSize {
+		// 		columnPtr.pointee.components.reserveCapacity(i + componentSize)
+		// 		columnPtr.pointee.components.append(contentsOf: componentBytes)
+		// 	} else {
+		// 		componentBytes.enumerated().forEach { (idx, byte) in
+		// 			columnPtr.pointee.components[i + idx] = byte
+		// 		}
+		// 	}
+		// }
 	}
 
 	/// - Attention: fatal error if the entity does not have the component or the entity does not exist
 	@inlinable
-	func getComponent<T: Component>(row: ArchRowId) -> T {
-		return withUnsafePointer(to: self.components[T.__id]!) { (columnPtr: UnsafePointer<ComponentColumn>) in
-			let start = columnPtr.pointee.componentSize * Int(row)
-			return columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeBytes { ptr -> T in
-				let compPtr = ptr.bindMemory(to: T.self)
-				return compPtr[0]
-			}
+	func getComponent<T: Component>(row: ArchRowId) throws -> T {
+		guard let ptr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+			throw KiwiError(.EntityDoesNotHaveComponent)
 		}
+
+		return ptr.pointee.components[Int(row)]
+		
+		// return withUnsafePointer(to: self.components[T.__id]!) { (columnPtr: UnsafePointer<ComponentColumn>) in
+		// 	let start = columnPtr.pointee.componentSize * Int(row)
+		// 	return columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeBytes { ptr -> T in
+		// 		let compPtr = ptr.bindMemory(to: T.self)
+		// 		return compPtr[0]
+		// 	}
+		// }
 	}
 
 	@inlinable
 	func getComponent<T: Component>(row: ArchRowId, _ body: (UnsafePointer<T>) -> ()) {
-		withUnsafePointer(to: self.components[T.__id]!) { (columnPtr: UnsafePointer<ComponentColumn>) in
-			let start = columnPtr.pointee.componentSize * Int(row)
-			columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeBytes { ptr in
-				let compPtr = ptr.bindMemory(to: T.self)
-				body(compPtr.baseAddress!)
-			}
-		}
+	todo()
+		// withUnsafePointer(to: self.components[T.__id]!) { (columnPtr: UnsafePointer<ComponentColumn>) in
+		// 	let start = columnPtr.pointee.componentSize * Int(row)
+		// 	columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeBytes { ptr in
+		// 		let compPtr = ptr.bindMemory(to: T.self)
+		// 		body(compPtr.baseAddress!)
+		// 	}
+		// }
 	}
 
 	@inlinable
 	mutating func getComponentMut<T: Component>(row: ArchRowId, _ body: (UnsafeMutablePointer<T>) -> ()) {
-		withUnsafeMutablePointer(to: &self.components[T.__id]!) { (columnPtr: UnsafeMutablePointer<ComponentColumn>) in
-			let start = columnPtr.pointee.componentSize * Int(row)
-			columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeMutableBytes { ptr in
-				let compPtr = ptr.bindMemory(to: T.self)
-				body(compPtr.baseAddress!)
-			}
-		}
+		todo()
+		// withUnsafeMutablePointer(to: &self.components[T.__id]!) { (columnPtr: UnsafeMutablePointer<ComponentColumn>) in
+		// 	let start = columnPtr.pointee.componentSize * Int(row)
+		// 	columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeMutableBytes { ptr in
+		// 		let compPtr = ptr.bindMemory(to: T.self)
+		// 		body(compPtr.baseAddress!)
+		// 	}
+		// }
 	}
 
 	@inlinable

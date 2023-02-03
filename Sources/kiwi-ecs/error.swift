@@ -9,5 +9,5 @@ public struct KiwiError: Error {
 }
 
 public enum KiwiErrorType {
-	case EntityCantHaveComponent
+	case EntityDoesNotHaveComponent
 }

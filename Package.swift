@@ -17,6 +17,6 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "kiwi-ecs-tests",
-            dependencies: ["kiwi-ecs"]),
+            dependencies: ["kiwi-ecs"])
     ]
 )

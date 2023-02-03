@@ -11,35 +11,37 @@ struct Name: Component, Equatable {
 }
 
 final class kiwi_ecs_swiftTests: XCTestCase {
-    func testSpawn() {
+    func testSpawn() throws {
         var world = World()
+
+        print("Hello \(world)")
         
         let expectedPos = Pos(x: 1, y: 4)
         let expectedName = Name(name: "Hello world")
 
-        let id = world.spawn(expectedPos, expectedName)
+        let id = try world.spawn(expectedPos, expectedName)
 
-        let pos: Pos = world.getComponent(of: id)
+        let pos: Pos = try world.getComponent(of: id)
         XCTAssertEqual(expectedPos, pos)
 
-        let name: Name = world.getComponent(of: id)
+        let name: Name = try world.getComponent(of: id)
         XCTAssertEqual(expectedName, name)
     }
 
-    // func testSpawn2() {
-    //     var world = World()
-    //     (0..<10000).forEach { i in
-    //         world.spawn(Name(name: "Hello world - \(i)"))
-    //     }
-
-    //     (0..<10000).forEach { (i: Int) in
-    //         let _ = XCTAssertEqual(world.getComponent(of: EntityId(i)), Name(name: "Hello world - \(i)"))
-    //     }
-    // }
-
-    func testHasComponent() {
+    func testSpawn2() {
         var world = World()
-        let id = world.spawn(Name(name: "Hello world"))
+        (0..<10000).forEach { i in
+            try! world.spawn(Name(name: "Hello world - \(i)"))
+        }
+
+        (0..<10000).forEach { (i: Int) in
+            let _ = XCTAssertEqual(try! world.getComponent(of: EntityId(i)), Name(name: "Hello world - \(i)"))
+        }
+    }
+
+    func testHasComponent() throws {
+        var world = World()
+        let id = try world.spawn(Name(name: "Hello world"))
         XCTAssertTrue(world.hasComponent(entity: id, Name.self))
         XCTAssertFalse(world.hasComponent(entity: id, Pos.self))
     }

@@ -1,6 +1,10 @@
 public typealias EntityId = UInt32
 
-public struct Entity {
+//========
+// Entity
+//========
+
+struct Entity {
 	let archId: ArchetypeId
 	let archRow: ArchRowId
 
@@ -11,7 +15,11 @@ public struct Entity {
 	}
 }
 
-public struct EntityStore {
+//=============
+// EntityStore
+//=============
+
+struct EntityStore {
 	@usableFromInline
 	var entities: [Entity]
 	@usableFromInline
@@ -116,3 +124,7 @@ internal extension EntityStore {
 		self.flags[Int(entity)].remove(Int(flag))
 	}
 }
+
+//===============
+// EntityBuilder
+//===============

@@ -13,25 +13,26 @@ internal extension ArchStore {
 	}
 
 	@inlinable
-	func get<Result>(archetype: ArchetypeId, _ body: (UnsafePointer<Archetype>) -> Result) -> Result {
-		return withUnsafePointer(to: self.archetypes[Int(archetype)]) { ptr in
-			return body(ptr)
+	func get<Result>(archetype: ArchetypeId, _ body: (UnsafePointer<Archetype>) throws -> Result) rethrows -> Result {
+		try withUnsafePointer(to: self.archetypes[Int(archetype)]) { ptr in
+			try body(ptr)
 		}
 	}
 
 	@inlinable
-	mutating func getMut(archetype: ArchetypeId, _ body: (UnsafeMutablePointer<Archetype>) -> Void) {
-		withUnsafeMutablePointer(to: &self.archetypes[Int(archetype)]) { ptr in
-			body(ptr)
+	mutating func getMut<Result>(archetype: ArchetypeId, _ body: (UnsafeMutablePointer<Archetype>) throws -> Result) rethrows -> Result {
+		try withUnsafeMutablePointer(to: &self.archetypes[Int(archetype)]) { ptr in
+			try body(ptr)
 		}
 	}
 
 	@inlinable
-	func remove(entity: Entity) { todo() }
+	func remove(entity: EntityId) { todo() }
 
 	/// components should be a sorted array
 	@inlinable
-	func getArchetypeId(components: [ComponentId]) -> ArchetypeId? {
+	@available(*, deprecated)
+	func getArchetypeIdMaybe(components: [ComponentId]) -> ArchetypeId? {
 		self.compMap[components]
 	}
 
@@ -40,29 +41,29 @@ internal extension ArchStore {
 	/// 
 	/// - `components`: sorted
 	/// - returns: the new id of the archetype
-	@inlinable
-	mutating func newArchetype(components: [ComponentId], sizes: [ComponentId: Int]) -> ArchetypeId {
-		let id = self.archetypes.count
-		self.compMap[components] = ArchetypeId(id)
-		self.archetypes.append(Archetype(
-			components: components,
-			sizes: components.map { sizes[$0].unsafelyUnwrapped }
-		))
-		return ArchetypeId(id)
-	}
+	// @inlinable
+	// mutating func newArchetype(components: [ComponentId], sizes: [ComponentId: Int]) -> ArchetypeId {
+	// 	let id = self.archetypes.count
+	// 	self.compMap[components] = ArchetypeId(id)
+	// 	self.archetypes.append(Archetype(components: components))
+	// 	return ArchetypeId(id)
+	// }
 
 	// `components` should be a sorted array
 	@inlinable
-	mutating func getNewEntityArchetype(components: [ComponentId]) -> ArchetypeId {
+	mutating func getArchetypeId(components: [ComponentId]) -> ArchetypeId {
 		if let archId = compMap[components] {
 			return archId
 		} else {
 			// Create new archetype
 			let id = ArchetypeId(self.archetypes.count)
-			todo("sizes")
-			self.archetypes.append(Archetype(components: components, sizes: []))
+			self.archetypes.append(Archetype(components: components))
 			self.compMap[components] = id
 			return id
 		}
+	}
+
+	func dealloc() {
+		todo()
 	}
 }
