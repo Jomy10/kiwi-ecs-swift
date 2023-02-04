@@ -1,8 +1,6 @@
 func todo(_ s: String = "") { fatalError("TODO \(s)") }
 func todo<T>(_ s: String = "") -> T { fatalError("TODO \(s)") }
 
-// TODO: pass struct Unmanaged -> deallocate when removed
-
 public struct World {
 	internal var entityStore: EntityStore
 	internal var archStore: ArchStore
@@ -58,14 +56,6 @@ public struct World {
 		}
 	}
 
-	/// Set an entity's component
-	// public mutating func setComponent<T: Component>(of entId: EntityId, _ comp: inout T) {
-	// 	let entity: Entity = self.entityStore.get(entity: entId)
-	// 	self.archStore.getMut(archetype: entity.archId) { archPtr in
-	// 		archPtr.pointee.setComponent(row: entity.archRow, id: T.__id, component: &comp)
-	// 	}
-	// }
-	
 	/// Kills an entity
 	///
 	/// This means the entity id will be reused for other entities.
@@ -91,10 +81,18 @@ public struct World {
 	}
 
 	/// Returns whether the entity has the specified flag
-	public func hasFlag<F: Flag>(entity: EntityId, _ flag: F.Type) -> Bool { todo() }
+	public func hasFlag<F: RawRepresentable>(entity: EntityId, _ flag: F) -> Bool where F.RawValue == FlagId {
+		self.entityStore.hasFlag(entity: entity, flag.rawValue)
+	}
 
 	/// Sets a flag for an entity
-	public mutating func setFlag<F: Flag>(of entity: EntityId, _ flag: F) { todo() }
+	public mutating func setFlag<F: RawRepresentable>(of entity: EntityId, _ flag: F) where F.RawValue == FlagId {
+		self.entityStore.setFlag(entity: entity, flag.rawValue)
+	}
+
+	public mutating func removeFlag<F: RawRepresentable>(of entity: EntityId, _ flag: F) where F.RawValue == FlagId {
+		self.entityStore.removeFlag(entity: entity, flag.rawValue)
+	}
 }
 
 //=========

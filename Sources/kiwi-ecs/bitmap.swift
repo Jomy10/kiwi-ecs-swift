@@ -15,8 +15,8 @@ struct Bitmap {
 extension Bitmap {
 	@inlinable
 	func contains(_ i: Int) -> Bool {
-		let idx = i / self.size
-		let idx2 = i % self.size
+		let idx: Int = i / self.size
+		let idx2: Int = i % self.size
 		if self.bits.count <= idx {
 			return false
 		} else {
@@ -26,8 +26,8 @@ extension Bitmap {
 
 	@inlinable
 	mutating func set(_ i: Int) {
-		let idx = i / self.size
-		let idx2 = i % self.size
+		let idx: Int = i / self.size
+		let idx2: Int = i % self.size
 		if self.bits.count <= idx {
 			self.bits.reserveCapacity(idx)
 			(self.bits.count...idx).forEach { _ in
@@ -40,12 +40,12 @@ extension Bitmap {
 
 	@inlinable
 	mutating func remove(_ i: Int) {
-		let idx = i / self.size
-		let idx2 = i % self.size
+		let idx: Int = i / self.size
+		let idx2: Int = i % self.size
 		if self.bits.count <= idx {
 			return
 		}
 
-		self.bits[idx] &= (0 << idx2)
+		self.bits[idx] &= ~(1 << idx2)
 	}
 }

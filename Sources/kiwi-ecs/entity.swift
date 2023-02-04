@@ -96,6 +96,7 @@ internal extension EntityStore {
 
 	@inlinable
 	func hasFlag(entity: EntityId, _ flag: FlagId) -> Bool {
+		print(self.flags[Int(entity)])
 		if self.flags.count <= entity {
 			return false
 		} else {

@@ -68,4 +68,27 @@ final class kiwi_ecs_swiftTests: XCTestCase {
 
         XCTAssertEqual(Pos(x: 10, y: 59), try world.getComponent(of: id))
     }
+
+    enum Flags: FlagId {
+        typealias RawValue = FlagId
+        case Player
+        case Enemy
+        case Wall
+    }
+
+    func testFlags() throws {
+        var world = World()
+
+        let id = try world.spawn()
+
+        print("== Player ==")
+        world.setFlag(of: id, Flags.Player)
+        XCTAssert(world.hasFlag(entity: id, Flags.Player))
+        print("== Player && Wall ==")
+        world.setFlag(of: id, Flags.Wall)
+        XCTAssert(world.hasFlag(entity: id, Flags.Player) && world.hasFlag(entity: id, Flags.Wall))
+        print("== Wall ==")
+        world.removeFlag(of: id, Flags.Player)
+        XCTAssert(world.hasFlag(entity: id, Flags.Wall))
+    }
 }
