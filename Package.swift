@@ -14,9 +14,23 @@ let package = Package(
     targets: [
         .target(
             name: "kiwi-ecs",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.unsafeFlags([
+                "-Xfrontend",
+                "-warn-long-function-bodies=100",
+                "-Xfrontend",
+                "-warn-long-expression-type-checking=100",
+            ])]
+        ),
         .testTarget(
             name: "kiwi-ecs-tests",
-            dependencies: ["kiwi-ecs"])
+            dependencies: ["kiwi-ecs"],
+            swiftSettings: [.unsafeFlags([
+                "-Xfrontend",
+                "-warn-long-function-bodies=100",
+                "-Xfrontend",
+                "-warn-long-expression-type-checking=100",
+            ])]
+        )
     ]
 )

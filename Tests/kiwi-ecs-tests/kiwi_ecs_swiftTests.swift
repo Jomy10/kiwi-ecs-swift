@@ -14,8 +14,6 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testSpawn() throws {
         var world = World()
 
-        print("Hello \(world)")
-        
         let expectedPos = Pos(x: 1, y: 4)
         let expectedName = Name(name: "Hello world")
 

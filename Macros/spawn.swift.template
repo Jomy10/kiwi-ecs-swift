@@ -1,13 +1,14 @@
 extension World {
-	<%{for $i in 1..ENV.SPAWN + 1}
+	<%{for $i in 1..=ENV.SPAWN}
 	/// Spawn a new entity with the specified components
 	@discardableResult
 	mutating func spawn<<%{for $j in 1..=$i}Component$j: Component §unless($j == $i, ",")%>>
 	(<%{for $j in 1..=$i}_ component$j: Component$j §unless($j == $i, ",")%>) throws -> EntityId {
-		let ids: [ComponentId] = [<%{for $j in 1..=$i}Component$j.kId%>].sorted()
+		var ids: [ComponentId] = [<%{for $j in 1..=$i}Component$j.kId §unless($j == $i, ",")%>]
+		ids = ids.sorted() // on separate lines for compile-time performance
 
 		let archId: ArchetypeId = self.archStore.getArchetypeId(components: ids)
-		let entId = self.entityStore.newId()
+		let entId: EntityId = self.entityStore.newId()
 		try self.archStore.getMut(archetype: archId) { archPtr in
 			let archRow = archPtr.pointee.newArchRowId(entity: entId)
 

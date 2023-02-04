@@ -1,5 +1,7 @@
 SPAWN=${SPAWN:-25}
 
+rm Sources/kiwi-ecs/generated/*.swift
+
 for file in Macros/*.template
 do
   file_name="${file/Macros/}"

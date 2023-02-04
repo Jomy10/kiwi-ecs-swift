@@ -43,10 +43,10 @@ internal extension EntityStore {
 	/// Gets a new id
 	@inlinable
 	mutating func newId() -> EntityId {
-		if let id = self.deadEntities.popFirst() {
+		if let id: EntityId = self.deadEntities.popFirst() {
 			return id
 		} else {
-			let id = self.nextId
+			let id: EntityId = self.nextId
 			self.nextId += 1
 			return id
 		}
@@ -85,7 +85,7 @@ internal extension EntityStore {
 
 	@inlinable
 	func entityCount() -> Int {
-		return (0...self.entities.count).reduce(0) { (count, id) in
+		return (0...self.entities.count).reduce(0) { (count: Int, id: Int) in
 			if self.deadEntities.contains(EntityId(id)) {
 				return count
 			} else {
@@ -124,7 +124,3 @@ internal extension EntityStore {
 		self.flags[Int(entity)].remove(Int(flag))
 	}
 }
-
-//===============
-// EntityBuilder
-//===============

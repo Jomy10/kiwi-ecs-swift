@@ -61,17 +61,6 @@ internal extension Archetype {
 		}
 	}
 
-	// /// - throws: if this archetype does not contain the specified component
-	// @inlinable
-	// @available(*, deprecated)
-	// mutating func checkedSetComponent<T: Component>(row: ArchRowId, component: inout T) throws {
-	// 	guard self.components[T.__id] != nil else {
-	// 		throw KiwiError(.EntityCantHaveComponent, message: "Entity of type \(row) can't have component \(component)")
-	// 	}
-
-	// 	self.setComponent(row: row, component: &component)
-	// }
-
 	@inlinable
 	mutating func setComponent<T: Component>(row: ArchRowId, component: T) throws {
 		guard let ptr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
@@ -83,24 +72,6 @@ internal extension Archetype {
 		} else {
 			ptr.pointee.components[Int(row)] = component
 		}
-		// withUnsafeMutablePointer(to: &self.components[compId]!) { columnPtr in
-		// 	let componentSize = columnPtr.pointee.componentSize
-		// 	let i = Int(row) * componentSize
-
-		// 	let componentBytes = UnsafeRawBufferPointer(
-		// 		start: component,
-		// 		count: componentSize
-		// 	)
-			
-		// 	if columnPtr.pointee.components.count <= i + componentSize {
-		// 		columnPtr.pointee.components.reserveCapacity(i + componentSize)
-		// 		columnPtr.pointee.components.append(contentsOf: componentBytes)
-		// 	} else {
-		// 		componentBytes.enumerated().forEach { (idx, byte) in
-		// 			columnPtr.pointee.components[i + idx] = byte
-		// 		}
-		// 	}
-		// }
 	}
 
 	/// - Attention: fatal error if the entity does not have the component or the entity does not exist
