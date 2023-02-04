@@ -41,10 +41,10 @@ public struct World {
 	/// Get a mutable pointer to a component
 	///
 	/// - Attention: fatal error if the entity does not exist or the entity does not have the component
-	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (UnsafeMutablePointer<T>) -> ()) {
+	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (UnsafeMutablePointer<T>) -> ()) throws {
 		let entity: Entity = self.entityStore.get(entity: entId)
-		self.archStore.getMut(archetype: entity.archId) { archPtr in
-			archPtr.pointee.getComponentMut(row: entity.archRow, body)
+		try self.archStore.getMut(archetype: entity.archId) { archPtr in
+			try archPtr.pointee.getComponentMut(row: entity.archRow, body)
 		}
 	}
 
@@ -52,8 +52,8 @@ public struct World {
 	///
 	/// - Attention: fatal error if the entity does not exist or the entity does not have the component
 	@inlinable
-	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (inout T) -> ()) {
-		self.getComponent(of: entId) { (ptr: UnsafeMutablePointer<T>) in
+	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (inout T) -> ()) throws {
+		try self.getComponent(of: entId) { (ptr: UnsafeMutablePointer<T>) in
 			body(&ptr.pointee)
 		}
 	}

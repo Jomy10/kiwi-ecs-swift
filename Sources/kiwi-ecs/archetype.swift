@@ -82,38 +82,18 @@ internal extension Archetype {
 		}
 
 		return ptr.pointee.components[Int(row)]
-		
-		// return withUnsafePointer(to: self.components[T.__id]!) { (columnPtr: UnsafePointer<ComponentColumn>) in
-		// 	let start = columnPtr.pointee.componentSize * Int(row)
-		// 	return columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeBytes { ptr -> T in
-		// 		let compPtr = ptr.bindMemory(to: T.self)
-		// 		return compPtr[0]
-		// 	}
-		// }
 	}
 
 	@inlinable
-	func getComponent<T: Component>(row: ArchRowId, _ body: (UnsafePointer<T>) -> ()) {
-	todo()
-		// withUnsafePointer(to: self.components[T.__id]!) { (columnPtr: UnsafePointer<ComponentColumn>) in
-		// 	let start = columnPtr.pointee.componentSize * Int(row)
-		// 	columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeBytes { ptr in
-		// 		let compPtr = ptr.bindMemory(to: T.self)
-		// 		body(compPtr.baseAddress!)
-		// 	}
-		// }
-	}
+	mutating func getComponentMut<T: Component>(row: ArchRowId, _ body: (UnsafeMutablePointer<T>) -> ()) throws {
+		guard let compColPtr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component (\(T.kId)) cannot be assigned to the entity because it does not have the specified component")
+		}
 
-	@inlinable
-	mutating func getComponentMut<T: Component>(row: ArchRowId, _ body: (UnsafeMutablePointer<T>) -> ()) {
-		todo()
-		// withUnsafeMutablePointer(to: &self.components[T.__id]!) { (columnPtr: UnsafeMutablePointer<ComponentColumn>) in
-		// 	let start = columnPtr.pointee.componentSize * Int(row)
-		// 	columnPtr.pointee.components[start..<start + columnPtr.pointee.componentSize].withUnsafeMutableBytes { ptr in
-		// 		let compPtr = ptr.bindMemory(to: T.self)
-		// 		body(compPtr.baseAddress!)
-		// 	}
-		// }
+		compColPtr.pointee.components.withUnsafeMutableBufferPointer { componentsPtr in
+			// row should always be valid
+			body(&componentsPtr[Int(row)])
+		}
 	}
 
 	@inlinable
