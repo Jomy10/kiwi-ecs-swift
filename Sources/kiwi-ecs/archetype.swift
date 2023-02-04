@@ -9,12 +9,9 @@ typealias ArchRowId = UInt32
 /// type of component
 fileprivate struct ComponentColumn<T> {
 	var components: [T]
-	// let componentSize: Int
 
-	// init(size: Int) {
 	init() {
 		self.components = []
-		// self.componentSize = size
 	}
 }
 
@@ -102,7 +99,7 @@ internal extension Archetype {
 	}
 
 	@inlinable
-	func removeEntity(row: ArchRowId) {
-		todo("remove entity")
+	mutating func removeEntity(row: ArchRowId) {
+		self.availableEntityRows.append(row)
 	}
 }

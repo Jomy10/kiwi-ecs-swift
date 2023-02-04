@@ -69,7 +69,13 @@ public struct World {
 	/// Kills an entity
 	///
 	/// This means the entity id will be reused for other entities.
-	public mutating func kill(entity id: EntityId) { todo() }
+	public mutating func kill(entity id: EntityId) {
+		let entity: Entity = self.entityStore.get(entity: id)
+		self.entityStore.kill(entity: id)
+		self.archStore.getMut(archetype: entity.archId) { (archPtr: UnsafeMutablePointer<Archetype>) in
+			archPtr.pointee.removeEntity(row: entity.archRow)
+		}
+	}
 
 	/// The amount of entities that are alive
 	public func entityCount() -> Int {

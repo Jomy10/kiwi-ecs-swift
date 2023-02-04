@@ -26,9 +26,6 @@ internal extension ArchStore {
 		}
 	}
 
-	@inlinable
-	func remove(entity: EntityId) { todo() }
-
 	/// components should be a sorted array
 	@inlinable
 	@available(*, deprecated)

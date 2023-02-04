@@ -43,4 +43,29 @@ final class kiwi_ecs_swiftTests: XCTestCase {
         XCTAssertTrue(world.hasComponent(entity: id, Name.self))
         XCTAssertFalse(world.hasComponent(entity: id, Pos.self))
     }
+
+    func testGetComponentMutPtr() throws {
+        var world = World()
+
+        let id = try world.spawn(Pos(x: 0, y: 1))
+        try world.getComponent(of: id) { (posPtr: UnsafeMutablePointer<Pos>) in
+            posPtr.pointee.x = 10
+            posPtr.pointee.y = 59
+        }
+
+        XCTAssertEqual(Pos(x: 10, y: 59), try world.getComponent(of: id))
+    }
+
+    func testGetComponentMutInout() throws {
+        var world = World()
+
+        let id = try world.spawn(Pos(x: 0, y: 1))
+
+        try world.getComponent(of: id) { (posPtr: inout Pos) in
+            posPtr.x = 10
+            posPtr.y = 59
+        }
+
+        XCTAssertEqual(Pos(x: 10, y: 59), try world.getComponent(of: id))
+    }
 }
