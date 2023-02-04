@@ -408,8 +408,9 @@ functions = {
 }
 
 raise "no input file given" unless filename = ARGV[0]
-raise "no output file given" unless output_file = ARGV[0]
+raise "no output file given" unless output_file = ARGV[1]
+
+puts "#{filename} > #{output_file}"
 
 parsed = parse(File.read(filename))
-# p parsed
-File.write(expand(parsed, functions), output_file)
+File.write(output_file, expand(parsed, functions))
