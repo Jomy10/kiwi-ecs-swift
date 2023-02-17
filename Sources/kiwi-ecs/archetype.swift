@@ -1,3 +1,5 @@
+import Darwin.C // TODO: remove
+
 @usableFromInline
 typealias ArchRowId = UInt32
 
@@ -7,7 +9,7 @@ typealias ArchRowId = UInt32
 
 /// Contains the component values for all entities in an archetype of one
 /// type of component
-fileprivate struct ComponentColumn<T> {
+struct ComponentColumn<T> {
 	var components: [T]
 
 	init() {
@@ -23,26 +25,30 @@ struct Archetype {
 	/// { id => ComponentColumn }
 	private var components: [ComponentId: UnsafeMutableRawPointer]
 	private var availableEntityRows: [ArchRowId]
-	private var entities: [EntityId]
+	/// index into this array = ArchRowId
+	private var entities: [EntityId?]
+    private let allocatedComponentsBuffer: UnsafeMutablePointer<ComponentColumn<Any>>
 }
 
 internal extension Archetype {
 	/// - components: the ids of the components
-	init(components: [ComponentId]) {//, sizes: [Int]) {
-		self.components = Dictionary<ComponentId, UnsafeMutableRawPointer>(minimumCapacity: components.count)
+    init(components componentIds: [ComponentId]) {//, sizes: [Int]) {
+		self.components = Dictionary<ComponentId, UnsafeMutableRawPointer>(minimumCapacity: componentIds.count)
 		self.availableEntityRows = []
 		self.entities = []
 
-		let compColumns = UnsafeMutablePointer<ComponentColumn<Any>>.allocate(capacity: components.count)
-		components.enumerated().forEach { (i, compId) in
-			let ptr = compColumns.advanced(by: i)
-			ptr.pointee = ComponentColumn()
-			self.components[compId] = UnsafeMutableRawPointer(ptr)
-		}
+		let compColumns = UnsafeMutablePointer<ComponentColumn<Any>>.allocate(capacity: componentIds.count)
+        self.allocatedComponentsBuffer = compColumns
+       
+        componentIds.enumerated().forEach { (i, compId) in
+            let colPtr = compColumns.advanced(by: i)
+            colPtr.initialize(to: ComponentColumn())
+            self.components[compId] = UnsafeMutableRawPointer(colPtr)
+        }
 	}
 
 	func dealloc() {
-		todo()
+        self.allocatedComponentsBuffer.deallocate()
 	}
 
 	/// Get an empty entity archrow id
@@ -60,8 +66,9 @@ internal extension Archetype {
 
 	@inlinable
 	mutating func setComponent<T: Component>(row: ArchRowId, component: T) throws {
-		guard let ptr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
-			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component \(component) (\(T.kId)) cannot be assigned to the entity because it does not have the specified component")
+        let _t = self.components
+		guard let ptr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component \(component) (\(T.id)) cannot be assigned to the entity because it does not have the specified component")
 		}
 
 		if ptr.pointee.components.count <= row {
@@ -74,7 +81,7 @@ internal extension Archetype {
 	/// - Attention: fatal error if the entity does not have the component or the entity does not exist
 	@inlinable
 	func getComponent<T: Component>(row: ArchRowId) throws -> T {
-		guard let ptr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+		guard let ptr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
 			throw KiwiError(.EntityDoesNotHaveComponent)
 		}
 
@@ -83,8 +90,8 @@ internal extension Archetype {
 
 	@inlinable
 	mutating func getComponentMut<T: Component>(row: ArchRowId, _ body: (UnsafeMutablePointer<T>) -> ()) throws {
-		guard let compColPtr = self.components[T.kId]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
-			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component (\(T.kId)) cannot be assigned to the entity because it does not have the specified component")
+		guard let compColPtr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component (\(T.id)) cannot be assigned to the entity because it does not have the specified component")
 		}
 
 		compColPtr.pointee.components.withUnsafeMutableBufferPointer { componentsPtr in
@@ -101,5 +108,36 @@ internal extension Archetype {
 	@inlinable
 	mutating func removeEntity(row: ArchRowId) {
 		self.availableEntityRows.append(row)
+		self.entities[Int(row)] = nil
+	}
+
+	func components(_ componentsInfo: [(ComponentId, Int)]) -> ComponentsIterator {
+		let componentsPtrs = componentsInfo.map { componentInfo in
+			(
+				componentInfo.1,
+				UnsafeRawPointer(self.components[componentInfo.0]!).assumingMemoryBound(to: ComponentColumn<UInt8>.self)
+			)
+		}
+		return ComponentsIterator(entities: self.entities.lazy, components: componentsPtrs)
+	}
+
+	func components<T: Component>(_: T.Type) -> some Sequence<T> {
+		zip(
+			self.entities,
+			self.components[T.id]!.bindMemory(to: ComponentColumn<T>.self, capacity: 1)
+				.pointee.components
+		).lazy
+				.filter { (entId, component) in entId != nil }
+				.map { (entId, component) in component }
+	}
+
+	func componentsAndIds<T: Component>(_: T.Type) -> some Sequence<(EntityId, T)> {
+		zip(
+			self.entities,
+			self.components[T.id]!.bindMemory(to: ComponentColumn<T>.self, capacity: 1)
+				.pointee.components
+		).lazy
+				.filter { (entId, component) in entId != nil }
+				.map { (entId, component) in (entId!, component) }
 	}
 }

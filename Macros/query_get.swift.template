@@ -1,0 +1,27 @@
+extension Sequence<(EntityId, [UnsafeRawPointer])> {
+	@inlinable
+	public func get<A: Component>() -> some Sequence<A> {
+		return self.map { (_: EntityId, comps: [UnsafeRawPointer]) -> A in
+			comps[0].assumingMemoryBound(to: A.self).pointee
+		}
+	}
+
+	// @inlinable
+	// public func get<A, Component, B: Component>() -> some Sequence<(A, B)> {
+	// 	return self.map { (_: EntityId, comps: [UnsafeRawPointer]) -> (A, B) in
+	// 		(
+	// 			comps[0].assumingMemoryBound(to: A.self),
+	// 			comps[1].assumingMemoryBound(to: B.self)
+	// 		)
+	// 	}
+	// }
+
+	<%{for $i in 2..=ENV.QGET}
+	@inlinable
+	public func get<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>() -> some Sequence<(<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>)> {
+		return self.map { (_: EntityId, comps: [UnsafeRawPointer]) -> (<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>) in
+			(<%{for $j in 1..=$i} comps[§eval($j - 1)].assumingMemoryBound(to: C$j.self).pointee §unless($i == $j, ",") %>)
+		}
+	}
+	%>
+}

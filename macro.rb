@@ -132,9 +132,6 @@ def parse_template(chars)
     end
   end
 
-  # p cmd, body
-  # p parse_instruction(cmd)
-  # p parse(body)
   return Macro.new(MacroType::FOR, parse_instruction(cmd), parse(body))
 end
 
@@ -157,25 +154,16 @@ def parse_instruction(instr)
   end
 end
 
+# deprecated
 def parse_var(var)
   return parse_binary_expression(var)
-  # var = var.strip
-  # if var.to_i.to_s == var
-  #   # integer
-  #   return var.to_i
-  # elsif var.start_with? "$"
-  #   # variable
-  #   return Variable.new var
-  # elsif var.start_with? "ENV"
-  #   # environment variable
-  #   return EnvVar.new var.split(".")[1]
-  # end
 end
 
 def parse_macro_function(chars)
   current = :name
   name = ""
   params_s = ""
+  paren_level = 0
   loop do
     c = chars.next
     if c.nil?
@@ -184,18 +172,30 @@ def parse_macro_function(chars)
 
     case c
     when '('
-      current = :params
-      c = chars.next
-      if c.nil?
-        raise "unexpectedly found end of input while parsing macro function's arguments"
-      end
-      if c == ')'
-        break
+      if current == :params
+        paren_level += 1
+      else
+        current = :params
+        c = chars.next
+        if c.nil?
+          raise "unexpectedly found end of input while parsing macro function's arguments"
+        end
+        if c == ')'
+          if paren_level > 0
+            paren_level -= 1
+          else
+            break
+          end
+        end
       end
     when ' '
       return Source.new(name) if current == :name
     when ')'
-      break
+      if paren_level > 0
+        paren_level -= 1
+      else
+        break
+      end
     end
 
     case current
@@ -208,9 +208,10 @@ def parse_macro_function(chars)
 
   params = []
   quote_level = 0
+  paren_level = 0
   cur_param = ""
   params_s.chars.each do |c|
-    if c == "," && quote_level == 0
+    if c == "," && quote_level == 0 && paren_level == 0
       params << cur_param
       cur_param = ""
       next
@@ -220,7 +221,12 @@ def parse_macro_function(chars)
       quote_level += 1
     elsif c == '"' && quote_level == 1 && cur_param[cur_param.length-2] != '\\'
       quote_level -= 1
+    elsif c == '(' && quote_level == 0
+      paren_level += 1
+    elsif c == ')' && quote_level == 0
+      paren_level -= 1
     end
+      
     
     cur_param << c
   end
@@ -232,7 +238,7 @@ def parse_macro_function(chars)
         parse_binary_expression(param)
     }
 
-  return Function.new(name.to_sym, params)
+  return Function.new(name.gsub(FUNCTION_TOKEN, "").to_sym, params)
 end
 
 def parse_binary_expression(param)
@@ -269,6 +275,8 @@ def parse_binary_expression(param)
         :plus
       elsif elem == "-"
         :minus
+      elsif elem.start_with? FUNCTION_TOKEN
+        parse_macro_function(Iterator.new(elem.chars))
       else
         raise "invalid argument in binary expression: #{elem}"
       end
@@ -309,6 +317,7 @@ end
 #=================
 
 def expand(input, functions = Hash.new, variables = Hash.new)
+  # puts "expand input: #{input}"
   return input.flat_map do |val|
     if val.is_a? Source
       next val.string
@@ -317,8 +326,8 @@ def expand(input, functions = Hash.new, variables = Hash.new)
       case macro.type
       when MacroType::FOR
         for_instr = macro.instruction
-        raise "undefined variable #{for_instr.range.begin}" unless range_begin = get_var(for_instr.range.begin, variables).to_i
-        raise "undefined variable #{for_instr.range.end}" unless range_end = get_var(for_instr.range.end, variables).to_i
+        raise "undefined variable #{for_instr.range.begin}" unless range_begin = get_var(for_instr.range.begin, variables, functions).to_i
+        raise "undefined variable #{for_instr.range.end}" unless range_end = get_var(for_instr.range.end, variables, functions).to_i
 
         next (range_begin...range_end).flat_map do |var_val|
           variables[for_instr.var] = var_val
@@ -332,14 +341,14 @@ def expand(input, functions = Hash.new, variables = Hash.new)
       end
     elsif val.is_a? Function
       raise "unknown function #{val.name}" unless fn = functions[val.name]
-      next fn.call(val.params, variables)
+      next fn.call(val.params, variables, functions)
     else
-      raise "bug"
+      raise "bug #{val}"
     end
   end.join " "
 end
 
-def get_var(var, variables)
+def get_var(var, variables, functions)
   if var.is_a? Integer
     return var
   elsif var.is_a? Variable
@@ -347,15 +356,19 @@ def get_var(var, variables)
   elsif var.is_a? EnvVar
     return ENV[var.name]
   elsif var.is_a? BinaryExpression
-    return eval_binary_expression(var, variables)
+    return eval_binary_expression(var, variables, functions)
+  elsif var.is_a? Function
+    return expand([var], functions, variables)
+  elsif var.is_a? String
+    return var
   else
-    throw "invalid variable #{var}"
+    raise "invalid variable #{var}"
   end
 end
 
-def eval_binary_expression(expr, variables)
-  lhs = eval_binary_expression_element(expr.left, variables).to_i
-  rhs = eval_binary_expression_element(expr.right, variables).to_i
+def eval_binary_expression(expr, variables, functions)
+  lhs = get_var(expr.left, variables, functions).to_i
+  rhs = get_var(expr.right, variables, functions).to_i
 
   case expr.operator
     when :equal
@@ -379,31 +392,90 @@ def eval_binary_expression(expr, variables)
   end
 end
 
-def eval_binary_expression_element(elem, variables)
-  return get_var(elem, variables)
-  # if elem.is_a? BinaryExpression
-  #   eval_binary_expression(elem, variables)
-  # elsif elem.is_a? Variable
-  #   variables[elem.name]
-  # else
-  #   elem
-  # end
-end
-
 #=========
 # Execute
 #=========
 
+def gen_zip(count, total)
+  if total + 1 == count
+    return nil
+  end
+
+  next_zip = gen_zip(count + 1, total)
+  if !next_zip.nil?
+    return <<CODE
+zip(
+  archPtr.pointee.components(C#{count}.self),
+  #{next_zip}
+)
+CODE
+  else
+    return "archPtr.pointee.components(C#{count}.self)"
+  end
+end
+
+def next_zip_flatmap(max, i, tuple_access)
+  if i == max
+    return nil
+  end
+
+  new_tuple_access = tuple_access.map { |e| e }
+  if new_tuple_access.last == 0
+    new_tuple_access[new_tuple_access.length-1] = 1
+    if i + 2 < max
+      new_tuple_access.append(0)
+    end
+  elsif new_tuple_access.last == 1 && i + 2 < max
+    new_tuple_access.append(0)
+  end
+
+  next_map = next_zip_flatmap(max, i + 1, new_tuple_access)
+
+  if next_map == nil
+    return "tuple#{tuple_access.map { |v| ".#{v}"}.join("")}"
+  else
+    return "tuple#{tuple_access.map { |v| ".#{v}"}.join("")}, #{next_map}"
+  end
+end
+
+def zip2sequence(total, curr = 1)
+  if total == curr
+    return "[C#{curr}]"
+  end
+  next_zip = zip2sequence(total, curr + 1)
+
+  return "Zip2Sequence<[C#{curr}], #{next_zip}>"
+end
+
 functions = {
-  :unless => -> (params, variables) do
-    unless eval_binary_expression(params[0], variables)
+  :unless => -> (params, variables, functions) do
+    unless eval_binary_expression(params[0], variables, functions)
+      return get_var(params[1], variables, functions)
+    end
+  end,
+  :if => -> (params, variables, functions) do
+    if eval_binary_expression(params[0], variables, functions)
       return params[1]
     end
   end,
-  :if => -> (params, variables) do
-    if eval_binary_expression(params[0], variables)
-      return params[1]
+  :gen_zip => -> (params, variables, functions) do
+    gen_zip(1, get_var(params[0], variables, functions))
+  end,
+  :zip_flatmap => -> (params, variables, functions) do
+    i = get_var(params[0], variables, functions)
+    if i == 1
+      return ""
+    else
+      n = next_zip_flatmap(i, 0, [0])
+      return ".map { tuple in (#{n})}"
     end
+  end,
+  :zip2sequence => -> (params, variables, functions) do
+    total = get_var(params[0], variables, functions)
+    return zip2sequence(total)
+  end,
+  :eval => -> (params, variables, functions) do
+    return get_var(params[0], variables, functions)
   end
 }
 
@@ -413,4 +485,5 @@ raise "no output file given" unless output_file = ARGV[1]
 puts "#{filename} > #{output_file}"
 
 parsed = parse(File.read(filename))
+# p parsed
 File.write(output_file, expand(parsed, functions))

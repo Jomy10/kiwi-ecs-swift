@@ -1,0 +1,89 @@
+// ->  LazyMapSequence<FlattenSequence<LazyMapSequence<LazyFilterSequence<LazySequence<[[ComponentId] : ArchetypeId]>.Elements>.Elements, Zip2Sequence<[C1], Zip2Sequence<[C2], Zip2Sequence<[C3], Zip2Sequence<[C4], Zip2Sequence<[C5], [C6]>>>>>>>, (C1, C2, C3, C4, C5, C6)> { //some Sequence<( C1  , C2  , C3  , C4  , C5  , C6   )> {
+extension World {
+	/// Query all components of the entities having all of the specified components
+	public func query<C1: Component>(_: C1.Type) -> LazySequence<
+		FlattenSequence<
+			LazyMapSequence<
+				LazyFilterSequence<
+					LazySequence<[[ComponentId] : ArchetypeId]>.Elements
+				>.Elements,
+				[C1]
+			>
+		>
+	> {
+		// Split in half for compile time performance
+		let iter: LazySequence<[[ComponentId]: ArchetypeId]> = self.archStore.compMap.lazy
+		let filtered: LazyFilterSequence<LazySequence<[[ComponentId]: ArchetypeId]>.Elements> = iter
+			.filter { (archComponents: [ComponentId], _: ArchetypeId) in
+				[C1.id]
+					.allSatisfy(archComponents.contains)
+			}
+		return filtered.flatMap { (_: [ComponentId], archId: ArchetypeId) in
+				self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
+					§gen_zip(1)
+				}
+			}
+	}
+
+	<%{for $i in 2..=ENV.QUERY}
+	/// Query all components of the entities having all of the specified components
+	public func query<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>
+	(<%{for $j in 1..=$i}_: C$j.Type §unless($i == $j, ",")%>)
+	// -> some Sequence<(<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>)> {
+	-> LazyMapSequence<
+			FlattenSequence<
+				LazyMapSequence<
+					LazyFilterSequence<
+						LazySequence<[[ComponentId] : ArchetypeId]>.Elements
+					>.Elements,
+					§zip2sequence($i)
+				>
+			>,
+			(<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>)
+		> {
+
+		// Split in half for compile time performance
+		// TODO: figure out how to improve compile time
+		let iter: LazySequence<[[ComponentId]: ArchetypeId]> = self.archStore.compMap.lazy
+		let filtered: LazyFilterSequence<LazySequence<[[ComponentId]: ArchetypeId]>.Elements> = iter
+			.filter { (archComponents: [ComponentId], _: ArchetypeId) in
+				[<%{for $j in 1..=$i}C$j.id §unless($i == $j, ",")%>]
+					.allSatisfy(archComponents.contains)
+			}
+		return filtered.flatMap { (_: [ComponentId], archId: ArchetypeId) in
+				self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
+					§gen_zip($i)
+				}
+			}
+			§zip_flatmap($i)
+	}
+
+	public func query<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>
+	(<%{for $j in 1..=$i}_: C$j.Type §unless($i == $j, ",")%>)
+	-> LazyMapSequence<
+		FlattenSequence<
+			LazyMapSequence<
+				LazyFilterSequence<
+					LazySequence<[[ComponentId] : ArchetypeId]>.Elements
+				>.Elements,
+				§zip2sequence($i)
+			>
+		>,
+		(EntityId, <%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>)
+	> {
+		let iter: LazySequence<[[ComponentId]: ArchetypeId]> = self.archStore.compMap.lazy
+		let filtered: LazyFilterSequence<LazySequence<[[ComponentId]: ArchetypeId]>.Elements> = iter
+			.filter { (archComponents: [ComponentId], _: ArchetypeId) in
+				[<%{for $j in 1..=$i}C$j.id §unless($i == $j, ",")%>]
+					.allSatisfy(archComponents.contains)
+			}
+		return filtered.flatMap { (_: [ComponentId], archId: ArchetypeId) in
+				self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
+					§gen_zip($i)
+				}
+			}
+			§zip_flatmap($i)
+	}
+
+	%> // end
+}

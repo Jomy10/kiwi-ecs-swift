@@ -85,7 +85,8 @@ internal extension EntityStore {
 
 	@inlinable
 	func entityCount() -> Int {
-		return (0...self.entities.count).reduce(0) { (count: Int, id: Int) in
+		// specify Int() to reduce comle time
+		return (0...Int(self.entities.count)).reduce(0) { (count: Int, id: Int) in
 			if self.deadEntities.contains(EntityId(id)) {
 				return count
 			} else {
@@ -96,7 +97,6 @@ internal extension EntityStore {
 
 	@inlinable
 	func hasFlag(entity: EntityId, _ flag: FlagId) -> Bool {
-		print(self.flags[Int(entity)])
 		if self.flags.count <= entity {
 			return false
 		} else {

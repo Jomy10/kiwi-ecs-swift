@@ -1,3 +1,10 @@
+ 
+#if os(Linux)
+    import Glibc
+#else
+    import Darwin.C
+#endif
+
 import XCTest
 @testable import kiwi_ecs
 
@@ -8,6 +15,11 @@ struct Pos: Component, Equatable {
 
 struct Name: Component, Equatable {
     var name: String
+}
+
+struct Vel: Component, Equatable {
+    var x: Int
+    var y: Int
 }
 
 final class kiwi_ecs_swiftTests: XCTestCase {
@@ -81,14 +93,46 @@ final class kiwi_ecs_swiftTests: XCTestCase {
 
         let id = try world.spawn()
 
-        print("== Player ==")
+        // print("== Player ==")
         world.setFlag(of: id, Flags.Player)
         XCTAssert(world.hasFlag(entity: id, Flags.Player))
-        print("== Player && Wall ==")
+        // print("== Player && Wall ==")
         world.setFlag(of: id, Flags.Wall)
         XCTAssert(world.hasFlag(entity: id, Flags.Player) && world.hasFlag(entity: id, Flags.Wall))
-        print("== Wall ==")
+        // print("== Wall ==")
         world.removeFlag(of: id, Flags.Player)
         XCTAssert(world.hasFlag(entity: id, Flags.Wall))
+    }
+
+    func testQuery() throws {
+        var world = World()
+
+        try world.spawn()
+        let correctId = try world.spawn(Name(name: "Hello"), Pos(x: 0, y: 10), Vel(x: 11, y: 25))
+        try world.spawn(Name(name: "Hello"), Pos(x: 1, y: 12))
+
+        var count = 0
+        struct QRes {
+            let pos: Pos
+            let vel: Vel
+        }
+        world.query(Name.self, Pos.self, Vel.self).get()
+            .forEach { (name: Name, pos: Pos, vel: Vel) in
+                // XCTAssertEqual(id, correctId)
+                XCTAssertEqual(Name(name: "Hello"), name)
+                XCTAssertEqual(Pos(x: 0, y: 10), pos)
+                XCTAssertEqual(Vel(x: 11, y: 25), vel)
+                count += 1
+
+            }
+            // .forEach { (id, pos, vel) in
+            
+            //     XCTAssertEqual(id, correctId)
+            //     // XCTAssertEqual(Name(name: "Hello"), name)
+            //     XCTAssertEqual(Pos(x: 0, y: 10), pos)
+            //     XCTAssertEqual(Vel(x: 11, y: 25), vel)
+            //     count += 1
+            // }
+        XCTAssertEqual(count, 1)
     }
 }

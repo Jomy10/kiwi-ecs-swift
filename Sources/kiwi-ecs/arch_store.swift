@@ -1,9 +1,9 @@
-@usableFromInline
-typealias ArchetypeId = UInt32
+// @usableFromInline
+public typealias ArchetypeId = UInt32
 
 struct ArchStore {
 	private var archetypes: [Archetype]
-	private var compMap: [[ComponentId]:ArchetypeId]
+	internal var compMap: [[ComponentId]:ArchetypeId]
 }
 
 internal extension ArchStore {

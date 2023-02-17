@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "kiwi",
+    platforms: [.macOS(.v10_15)],
     products: [
         .library(
             name: "kiwi-ecs",
@@ -29,7 +30,7 @@ let package = Package(
                 "-Xfrontend",
                 "-warn-long-function-bodies=100",
                 "-Xfrontend",
-                "-warn-long-expression-type-checking=100",
+                "-warn-long-expression-type-checking=50",
             ])]
         )
     ]

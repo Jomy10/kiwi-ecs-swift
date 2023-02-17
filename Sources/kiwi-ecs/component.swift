@@ -5,26 +5,24 @@
 public typealias ComponentId = Int
 
 public protocol Component {
-	// called kId to avoid name collisions
 	/// A unique id for this component
-	static var kId: ComponentId { get }
-	/// **Don't override, unless you know what you're doing**
-	@available(*, deprecated)
-	static var __id: ComponentId { get }
+	static var id: ComponentId { get }
+
+	/// Do not override
+	static var __componentSize: Int { get } // <- use to determine size of componenent in archetype query
 }
 
 extension Component {
 	@inlinable
-	static var kId: ComponentId {
+	static var id: ComponentId {
 		var hasher = Hasher()
 		hasher.combine(String(describing: Self.self))
 		return hasher.finalize()
 	}
 
 	@inlinable
-	@available(*, deprecated)
-	static var __id: ComponentId {
-		return self.kId
+	static var __componentSize: Int {
+		MemoryLayout<Self>.size
 	}
 }
 
