@@ -116,23 +116,15 @@ final class kiwi_ecs_swiftTests: XCTestCase {
             let pos: Pos
             let vel: Vel
         }
-        world.query(Name.self, Pos.self, Vel.self).get()
-            .forEach { (name: Name, pos: Pos, vel: Vel) in
-                // XCTAssertEqual(id, correctId)
+        world.query(Name.self, Pos.self, Vel.self).getWithIds()
+            .forEach { (id: EntityId, name: Name, pos: Pos, vel: Vel) in
+                XCTAssertEqual(id, correctId)
                 XCTAssertEqual(Name(name: "Hello"), name)
                 XCTAssertEqual(Pos(x: 0, y: 10), pos)
                 XCTAssertEqual(Vel(x: 11, y: 25), vel)
                 count += 1
 
             }
-            // .forEach { (id, pos, vel) in
-            
-            //     XCTAssertEqual(id, correctId)
-            //     // XCTAssertEqual(Name(name: "Hello"), name)
-            //     XCTAssertEqual(Pos(x: 0, y: 10), pos)
-            //     XCTAssertEqual(Vel(x: 11, y: 25), vel)
-            //     count += 1
-            // }
         XCTAssertEqual(count, 1)
     }
 }
