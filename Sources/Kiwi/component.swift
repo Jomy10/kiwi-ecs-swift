@@ -14,14 +14,14 @@ public protocol Component {
 
 extension Component {
 	@inlinable
-	static var id: ComponentId {
+	public static var id: ComponentId {
 		var hasher = Hasher()
 		hasher.combine(String(describing: Self.self))
 		return hasher.finalize()
 	}
 
 	@inlinable
-	static var __componentSize: Int {
+	public static var __componentSize: Int {
 		MemoryLayout<Self>.size
 	}
 }

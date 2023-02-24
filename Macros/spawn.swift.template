@@ -2,7 +2,7 @@ extension World {
 	<%{for $i in 1..=ENV.SPAWN}
 	/// Spawn a new entity with the specified components
 	@discardableResult
-	mutating func spawn<<%{for $j in 1..=$i}Component$j: Component §unless($j == $i, ",")%>>
+	public mutating func spawn<<%{for $j in 1..=$i}Component$j: Component §unless($j == $i, ",")%>>
 	(<%{for $j in 1..=$i}_ component$j: Component$j §unless($j == $i, ",")%>) throws -> EntityId {
 		var ids: [ComponentId] = [<%{for $j in 1..=$i}Component$j.id §unless($j == $i, ",")%>]
 		ids = ids.sorted() // on separate lines for compile-time performance

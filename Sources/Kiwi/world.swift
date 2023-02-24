@@ -1,16 +1,6 @@
 func todo(_ s: String = "") { fatalError("TODO \(s)") }
 func todo<T>(_ s: String = "") -> T { fatalError("TODO \(s)") }
 
-#if os(Linux)
-    import Glibc
-#else
-    import Darwin.C
-#endif
-func fprint(_ s: Any...) {
-	print(s.map { "\($0)" }.joined(separator: " "))
-	fflush(stdout)
-}
-
 public struct World {
 	internal var entityStore: EntityStore
 	internal var archStore: ArchStore
@@ -66,6 +56,8 @@ public struct World {
 		}
 	}
 
+	// TODO: setComponent
+
 	/// Kills an entity
 	///
 	/// This means the entity id will be reused for other entities.
@@ -105,7 +97,7 @@ public struct World {
 	}
 
 	public mutating func destroy() {
-		todo()
+		self.archStore.deallocArchetypes()
 	}
 }
 
@@ -114,7 +106,7 @@ public struct World {
 //=========
 
 extension World {
-	public func query(_ components: Component.Type...) -> some Sequence<(EntityId, [UnsafeRawPointer])> {
+	public func query(_ components: Component.Type...) -> some Sequence<(EntityId, ContiguousArray<UnsafeRawPointer>)> {
 		self.archStore.compMap.lazy
 			.filter { (archComponents, _) in
 				components.map { $0.id }.allSatisfy(archComponents.contains)
@@ -125,50 +117,14 @@ extension World {
 			}
 	}
 
-	// 1. Query all archetypes
-	// public func query(_ componentIds: ComponentId...) -> some Sequence<(ArchetypeId, Sequence<EntityId>)> {
-	// 	QueryResult(seq: self.archStore.compMap.lazy
-	// 		.filter { (archComponents, _) in
-	// 			componentIds.allSatisfy(archComponents.contains)
-	// 		}.map { (_, archId: ArchetypeId) in
-	// 			self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
-	// 				archPtr.aliveEntities
-	// 			}
-	// 		})
-	// }
-
-	// func query<C1: Component, C2: Component>(_: C1.Type, _: C2.Type) {
-	// 	let a = self.archStore.compMap.lazy
-	// 		.filter { (archComponents, _) in
-	// 			[C1.id, C2.id].allSatisfy(archComponents.contains)
-	// 		}.map { (_, archId) in 
-	// 			self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in 
-	// 				zip(
-	// 					archPtr.pointee.components(C1.self),
-	// 					archPtr.pointee.components(C2.self)
-	// 				)
-	// 			}
-	// 		}
-	// }
-
-	// public func query<C1: Component, C2: Component, C3: Component>(_: C1.Type, _: C2.Type, _: C3.Type) -> some Sequence<(C1, C2, C3)> {
-	// 	self.archStore.compMap.lazy
-	// 		.filter { (archComponents, _) in
-	// 			[C1.id, C2.id, C3.id]
-	// 				.allSatisfy(archComponents.contains)
-	// 		}.flatMap { (_, archId) in
-	// 			self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
-	// 				zip(
-	// 					zip(
-	// 						archPtr.pointee.components(C1.self),
-	// 						archPtr.pointee.components(C2.self)
-	// 					),
-	// 					archPtr.pointee.components(C3.self)
-	// 				)
-	// 			}
-	// 		}.map { (comps12, comps3) in
-	// 			(comps12.0, comps12.1, comps3)
-	// 			(left, right.0, right.1.0, right.0.1)
-	// 		}
-	// }
+	public func queryMut(_ components: Component.Type...) -> some Sequence<(EntityId, ContiguousArray<UnsafeMutableRawPointer>)> {
+		self.archStore.compMap.lazy
+			.filter { (archComponents, _) in
+				components.map { $0.id }.allSatisfy(archComponents.contains)
+			}.flatMap { (_, archId: ArchetypeId) in
+				self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
+					return UnsafeMutablePointer(mutating: archPtr).pointee.componentsMut(components.map { ($0.id, $0.__componentSize)})
+				}
+			}
+	}
 }

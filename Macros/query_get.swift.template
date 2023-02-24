@@ -1,14 +1,14 @@
-extension Sequence<(EntityId, [UnsafeRawPointer])> {
+extension Sequence<(EntityId, ContiguousArray<UnsafeRawPointer>)> {
 	@inlinable
 	public func get<A: Component>() -> some Sequence<A> {
-		return self.map { (_: EntityId, comps: [UnsafeRawPointer]) -> A in
+		return self.map { (_: EntityId, comps: ContiguousArray<UnsafeRawPointer>) -> A in
 			comps[0].assumingMemoryBound(to: A.self).pointee
 		}
 	}
 
 	@inlinable
 	public func getWithIds<A: Component>() -> some Sequence<(EntityId, A)> {
-		return self.map { (id: EntityId, comps: [UnsafeRawPointer]) -> (EntityId, A) in
+		return self.map { (id: EntityId, comps: ContiguousArray<UnsafeRawPointer>) -> (EntityId, A) in
 			(id, comps[0].assumingMemoryBound(to: A.self).pointee)
 		}
 	}
@@ -16,7 +16,7 @@ extension Sequence<(EntityId, [UnsafeRawPointer])> {
 	<%{for $i in 2..=ENV.QGET}
 	@inlinable
 	public func get<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>() -> some Sequence<(<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>)> {
-		return self.map { (_: EntityId, comps: [UnsafeRawPointer]) -> (<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>) in
+		return self.map { (_: EntityId, comps: ContiguousArray<UnsafeRawPointer>) -> (<%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>) in
 			(<%{for $j in 1..=$i} comps[§eval($j - 1)].assumingMemoryBound(to: C$j.self).pointee §unless($i == $j, ",") %>)
 		}
 	}
@@ -25,8 +25,45 @@ extension Sequence<(EntityId, [UnsafeRawPointer])> {
 	<%{for $i in 2..=ENV.QGET}
 	@inlinable
 	public func getWithIds<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>() -> some Sequence<(EntityId, <%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>)> {
-		return self.map { (id: EntityId, comps: [UnsafeRawPointer]) -> (EntityId, <%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>) in
+		return self.map { (id: EntityId, comps: ContiguousArray<UnsafeRawPointer>) -> (EntityId, <%{for $j in 1..=$i}C$j §unless($i == $j, ",")%>) in
 			(id, <%{for $j in 1..=$i} comps[§eval($j - 1)].assumingMemoryBound(to: C$j.self).pointee §unless($i == $j, ",") %>)
+		}
+	}
+	%>
+}
+
+extension Sequence<(EntityId, ContiguousArray<UnsafeMutableRawPointer>)> {
+	@inlinable
+	public func mutate<A: Component>(_ edit: (inout A) -> ()) {
+		self.forEach { (_: EntityId, comps: ContiguousArray<UnsafeMutableRawPointer>) -> () in
+			edit(&comps[0].assumingMemoryBound(to: A.self).pointee)
+		}
+	}
+
+	@inlinable
+	public func mutateWithIds<A: Component>(_ edit: (EntityId, inout A) -> ()) {
+		self.forEach { (id: EntityId, comps: ContiguousArray<UnsafeMutableRawPointer>) -> () in
+			edit(id, &comps[0].assumingMemoryBound(to: A.self).pointee)
+		}
+	}
+
+	<%{for $i in 2..=ENV.QGET}
+	@inlinable
+	public func mutate
+		<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>
+		(_ edit: (<%{for $j in 1..=$i}inout C$j §unless($i == $j, ",")%>) -> ()) {
+
+		self.forEach { (_: EntityId, comps: ContiguousArray<UnsafeMutableRawPointer>) -> () in
+			edit(<%{for $j in 1..=$i}&comps[§eval($j - 1)].assumingMemoryBound(to: C$j.self).pointee §unless($i == $j, ",")%>)
+		}
+	}
+
+	@inlinable
+	public func mutateWithIds
+		<<%{for $j in 1..=$i}C$j: Component §unless($i == $j, ",")%>>
+		(_ edit: (EntityId, <%{for $j in 1..=$i}inout C$j §unless($i == $j, ",")%>) -> ()) {
+		self.forEach { (id: EntityId, comps: ContiguousArray<UnsafeMutableRawPointer>) -> () in
+			edit(id, <%{for $j in 1..=$i}&comps[§eval($j - 1)].assumingMemoryBound(to: C$j.self).pointee §unless($i == $j, ",")%>)
 		}
 	}
 	%>

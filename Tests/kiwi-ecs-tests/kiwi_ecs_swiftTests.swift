@@ -1,12 +1,11 @@
- 
-#if os(Linux)
+ #if os(Linux)
     import Glibc
 #else
     import Darwin.C
 #endif
 
 import XCTest
-@testable import kiwi_ecs
+@testable import Kiwi
 
 struct Pos: Component, Equatable {
     var x: Int8
@@ -112,10 +111,6 @@ final class kiwi_ecs_swiftTests: XCTestCase {
         try world.spawn(Name(name: "Hello"), Pos(x: 1, y: 12))
 
         var count = 0
-        struct QRes {
-            let pos: Pos
-            let vel: Vel
-        }
         world.query(Name.self, Pos.self, Vel.self).getWithIds()
             .forEach { (id: EntityId, name: Name, pos: Pos, vel: Vel) in
                 XCTAssertEqual(id, correctId)
@@ -126,5 +121,28 @@ final class kiwi_ecs_swiftTests: XCTestCase {
 
             }
         XCTAssertEqual(count, 1)
+    }
+
+    func testQueryMut() throws {
+        var world = World()
+
+        let id1 = try world.spawn(Pos(x: 0, y: 10))
+        let id2 = try world.spawn(Vel(x: 4, y: 11), Pos(x: 9, y: 15))
+
+        world.queryMut(Pos.self)
+            .mutate { (pos: inout Pos) in
+                pos.x += 1
+            }
+
+        world.query(Pos.self).getWithIds()
+            .forEach { (id: EntityId, pos: Pos) in
+                if id == id1 {
+                    XCTAssertEqual(pos, Pos(x: 1, y: 10))
+                } else if id == id2 {
+                    XCTAssertEqual(pos, Pos(x: 10, y: 15))
+                } else {
+                    XCTFail()
+                }
+            }
     }
 }

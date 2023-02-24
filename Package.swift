@@ -8,13 +8,14 @@ let package = Package(
     platforms: [.macOS(.v10_15)],
     products: [
         .library(
-            name: "kiwi-ecs",
-            targets: ["kiwi-ecs"]),
+            name: "Kiwi",
+            targets: ["Kiwi"]),
     ],
-    dependencies: [],
+    dependencies: [
+    ],
     targets: [
         .target(
-            name: "kiwi-ecs",
+            name: "Kiwi",
             dependencies: [],
             swiftSettings: [.unsafeFlags([
                 "-Xfrontend",
@@ -23,9 +24,15 @@ let package = Package(
                 "-warn-long-expression-type-checking=100",
             ])]
         ),
+        .executableTarget(
+            name: "Benchmarks",
+            dependencies: [
+                "Kiwi"
+            ]
+        ),
         .testTarget(
             name: "kiwi-ecs-tests",
-            dependencies: ["kiwi-ecs"],
+            dependencies: ["Kiwi"],
             swiftSettings: [.unsafeFlags([
                 "-Xfrontend",
                 "-warn-long-function-bodies=100",

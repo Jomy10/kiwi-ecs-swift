@@ -1,5 +1,3 @@
-import Darwin.C // TODO: remove
-
 @usableFromInline
 typealias ArchRowId = UInt32
 
@@ -66,7 +64,6 @@ internal extension Archetype {
 
 	@inlinable
 	mutating func setComponent<T: Component>(row: ArchRowId, component: T) throws {
-        let _t = self.components
 		guard let ptr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
 			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component \(component) (\(T.id)) cannot be assigned to the entity because it does not have the specified component")
 		}
@@ -121,6 +118,17 @@ internal extension Archetype {
 		return ComponentsIterator(entities: self.entities.lazy, components: componentsPtrs)
 	}
 
+	mutating func componentsMut(_ componentsInfo: [(ComponentId, Int)]) -> MutableComponentsIterator {
+		let componentsPtrs = componentsInfo.map { componentInfo in
+			(
+				componentInfo.1,
+				self.components[componentInfo.0]!.assumingMemoryBound(to: ComponentColumn<UInt8>.self)
+			)
+		}
+		return MutableComponentsIterator(entities: self.entities.lazy, components: componentsPtrs)
+	}
+
+	@available(*, deprecated)
 	func components<T: Component>(_: T.Type) -> some Sequence<T> {
 		zip(
 			self.entities,
@@ -131,6 +139,7 @@ internal extension Archetype {
 				.map { (entId, component) in component }
 	}
 
+	@available(*, deprecated)
 	func componentsAndIds<T: Component>(_: T.Type) -> some Sequence<(EntityId, T)> {
 		zip(
 			self.entities,
