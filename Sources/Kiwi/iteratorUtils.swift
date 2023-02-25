@@ -25,10 +25,8 @@ struct UnsafeSequenceBuffer<Element> {
 	/// Buffer should be fully filled as this function will return the full buffer as an array
 	/// regardless of wheter it was fully initialized
 	@inlinable
-	func unsafeGetFull() -> ContiguousArray<Element> {
-		return ContiguousArray(
-			UnsafeMutableBufferPointer(start: self.bufferBaseAddress, count: self.bufSize)
-		)
+	func unsafeGetFull() -> UnsafeMutableBufferPointer<Element> {
+		return UnsafeMutableBufferPointer(start: self.bufferBaseAddress, count: self.bufSize)
 	}
 }
 

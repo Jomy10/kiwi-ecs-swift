@@ -66,9 +66,22 @@ internal extension Archetype {
 	}
 
 	@inlinable
-	mutating func setComponent<T: Component>(row: ArchRowId, component: T) throws {
+	mutating func setComponentThrowable<T: Component>(row: ArchRowId, component: T) throws {
 		guard let ptr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
 			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component \(component) (\(T.id)) cannot be assigned to the entity because it does not have the specified component")
+		}
+
+		if ptr.pointee.components.count <= row {
+			ptr.pointee.components.append(component)
+		} else {
+			ptr.pointee.components[Int(row)] = component
+		}
+	}
+
+	@inlinable
+	mutating func setComponent<T: Component>(row: ArchRowId, component: T) {
+		guard let ptr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
+			fatalError("Component \(component) (\(T.id)) cannot be assigned to the entity because it does not have the specified component")
 		}
 
 		if ptr.pointee.components.count <= row {

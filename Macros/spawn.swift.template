@@ -3,20 +3,20 @@ extension World {
 	/// Spawn a new entity with the specified components
 	@discardableResult
 	public mutating func spawn<<%{for $j in 1..=$i}Component$j: Component §unless($j == $i, ",")%>>
-	(<%{for $j in 1..=$i}_ component$j: Component$j §unless($j == $i, ",")%>) throws -> EntityId {
+	(<%{for $j in 1..=$i}_ component$j: Component$j §unless($j == $i, ",")%>) -> EntityId {
 		var ids: [ComponentId] = [<%{for $j in 1..=$i}Component$j.id §unless($j == $i, ",")%>]
 		ids = ids.sorted() // on separate lines for compile-time performance
 
 		let archId: ArchetypeId = self.archStore.getArchetypeId(components: ids)
 		let entId: EntityId = self.entityStore.newId()
-		try self.archStore.getMut(archetype: archId) { archPtr in
+		self.archStore.getMut(archetype: archId) { archPtr in
 			let archRow = archPtr.pointee.newArchRowId(entity: entId)
 
 			// register entity
 			self.entityStore.spawn(entity: entId, arch: archId, archRow: archRow)
 
 			<%{for $j in 1..=$i}
-			try archPtr.pointee.setComponent(row: archRow, component: component$j)
+			archPtr.pointee.setComponent(row: archRow, component: component$j)
 			%>
 		}
 

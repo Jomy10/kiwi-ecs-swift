@@ -15,7 +15,7 @@ struct ComponentsIterator: Sequence, IteratorProtocol {
     /// - the entity id
     /// - an array (unknow-sized tuple) of type UnsafeRawPointer containing pointers to the requested components of this entity
 	@inlinable
-	mutating func next() -> (EntityId, ContiguousArray<UnsafeRawPointer>)? {
+	mutating func next() -> (EntityId, UnsafeBufferPointer<UnsafeRawPointer>)? {
 		if let id = entities.next() {
 			if let id = id {
 				defer { self.i += 1 }
@@ -25,7 +25,7 @@ struct ComponentsIterator: Sequence, IteratorProtocol {
 						return bufCompPtr.baseAddress.unsafelyUnwrapped + (i * size)
 					}
 				}
-				return (id, self.buffer.unsafeGetFull())
+				return (id, UnsafeBufferPointer(self.buffer.unsafeGetFull()))
 			} else {
 				// when id is nil, then the entity is dead, so go to next index
 				// (~ filter)
@@ -52,7 +52,7 @@ struct MutableComponentsIterator: Sequence, IteratorProtocol {
 	}
 
 	@inlinable
-	mutating func next() -> (EntityId, ContiguousArray<UnsafeMutableRawPointer>)? {
+	mutating func next() -> (EntityId, UnsafeMutableBufferPointer<UnsafeMutableRawPointer>)? {
 		if let id = entities.next() {
 			if let id = id {
 				defer { self.i += 1 }

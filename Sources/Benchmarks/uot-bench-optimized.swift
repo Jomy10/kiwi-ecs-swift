@@ -78,9 +78,19 @@ let maxSpeed = 10.0
 let maxCollider = 1.0
 
 func uotOpt() {
-	let size = Int(CommandLine.arguments[2]) ?? 1000
-	let collisionLimit = Int32(CommandLine.arguments[3]) ?? 0
-
+	let size: Int
+	if CommandLine.argc < 2 {
+		size = 1000
+	} else {
+		size = Int(CommandLine.arguments[2])!
+	}
+	let collisionLimit: Int32
+	if CommandLine.argc < 3 {
+		collisionLimit = 0
+	} else {
+		collisionLimit = Int32(CommandLine.arguments[3])!
+	}
+	
 	try! benchPhysicsOptimized(size, collisionLimit)
 }
 
@@ -136,7 +146,7 @@ func benchPhysicsOptimized(_ size: Int, _ collisionLimit: Int32) throws {
 	defer { world.destroy() }
 
 	for _ in 0..<size {
-		try world.spawn(
+		world.spawn(
 			Position(x: Float64.random(in: 0...maxPosition), y: Float64.random(in: 0...maxPosition)),
 			Velocity(x: Float64.random(in: 0...maxSpeed), y: Float64.random(in: 0...maxSpeed)),
 			Collider(radius: Float64.random(in: 0...maxCollider)),
@@ -155,7 +165,7 @@ func benchPhysicsOptimized(_ size: Int, _ collisionLimit: Int32) throws {
 		checkCollisions(&world, &deathCount, collisionLimit: collisionLimit)
 
 		for _ in 0..<deathCount {
-			try world.spawn(
+			world.spawn(
 				Position(x: Float64.random(in: 0...maxPosition), y: Float64.random(in: 0...maxPosition)),
 				Velocity(x: Float64.random(in: 0...maxSpeed), y: Float64.random(in: 0...maxSpeed)),
 				Collider(radius: Float64.random(in: 0...maxCollider)),

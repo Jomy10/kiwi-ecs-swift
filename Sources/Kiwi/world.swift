@@ -10,7 +10,7 @@ public struct World {
 	// see generated macros
 	/// Spawn a new entity with the specified components
 	@discardableResult
-	public mutating func spawn() throws -> EntityId {
+	public mutating func spawn() -> EntityId {
 		let archId: ArchetypeId = self.archStore.getArchetypeId(components: [])
 		let entId = self.entityStore.newId()
 		self.archStore.getMut(archetype: archId) { archPtr in
@@ -53,7 +53,7 @@ public struct World {
 		}
 	}
 
-	// TODO: setComponent
+	
 
 	/// Kills an entity
 	///
@@ -107,7 +107,7 @@ extension World {
 		return self.entityStore.entityIds()
 	}
 
-	public func query(_ components: Component.Type...) -> some Sequence<(EntityId, ContiguousArray<UnsafeRawPointer>)> {
+	public func query(_ components: Component.Type...) -> some Sequence<(EntityId, UnsafeBufferPointer<UnsafeRawPointer>)> {
 		self.archStore.compMap.lazy
 			.filter { (archComponents, _) in
 				components.map { $0.id }.allSatisfy(archComponents.contains)
@@ -118,7 +118,7 @@ extension World {
 			}
 	}
 
-	public func queryMut(_ components: Component.Type...) -> some Sequence<(EntityId, ContiguousArray<UnsafeMutableRawPointer>)> {
+	public func queryMut(_ components: Component.Type...) -> some Sequence<(EntityId, UnsafeMutableBufferPointer<UnsafeMutableRawPointer>)> {
 		self.archStore.compMap.lazy
 			.filter { (archComponents, _) in
 				components.map { $0.id }.allSatisfy(archComponents.contains)

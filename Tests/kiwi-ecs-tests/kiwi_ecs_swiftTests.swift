@@ -28,7 +28,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
         let expectedPos = Pos(x: 1, y: 4)
         let expectedName = Name(name: "Hello world")
 
-        let id = try world.spawn(expectedPos, expectedName)
+        let id = world.spawn(expectedPos, expectedName)
 
         let pos: Pos = try world.getComponent(of: id)
         XCTAssertEqual(expectedPos, pos)
@@ -40,7 +40,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testSpawn2() {
         var world = World()
         (0..<10000).forEach { i in
-            try! world.spawn(Name(name: "Hello world - \(i)"))
+            world.spawn(Name(name: "Hello world - \(i)"))
         }
 
         (0..<10000).forEach { (i: Int) in
@@ -50,7 +50,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
 
     func testHasComponent() throws {
         var world = World()
-        let id = try world.spawn(Name(name: "Hello world"))
+        let id = world.spawn(Name(name: "Hello world"))
         XCTAssertTrue(world.hasComponent(entity: id, Name.self))
         XCTAssertFalse(world.hasComponent(entity: id, Pos.self))
     }
@@ -58,7 +58,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testGetComponentMutPtr() throws {
         var world = World()
 
-        let id = try world.spawn(Pos(x: 0, y: 1))
+        let id = world.spawn(Pos(x: 0, y: 1))
         try world.getComponent(of: id) { (posPtr: UnsafeMutablePointer<Pos>) in
             posPtr.pointee.x = 10
             posPtr.pointee.y = 59
@@ -70,7 +70,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testGetComponentMutInout() throws {
         var world = World()
 
-        let id = try world.spawn(Pos(x: 0, y: 1))
+        let id = world.spawn(Pos(x: 0, y: 1))
 
         try world.getComponent(of: id) { (posPtr: inout Pos) in
             posPtr.x = 10
@@ -90,7 +90,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testFlags() throws {
         var world = World()
 
-        let id = try world.spawn()
+        let id = world.spawn()
 
         // print("== Player ==")
         world.setFlag(entity: id, Flags.Player)
@@ -106,9 +106,9 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testQuery() throws {
         var world = World()
 
-        try world.spawn()
-        let correctId = try world.spawn(Name(name: "Hello"), Pos(x: 0, y: 10), Vel(x: 11, y: 25))
-        try world.spawn(Name(name: "Hello"), Pos(x: 1, y: 12))
+        world.spawn()
+        let correctId = world.spawn(Name(name: "Hello"), Pos(x: 0, y: 10), Vel(x: 11, y: 25))
+        world.spawn(Name(name: "Hello"), Pos(x: 1, y: 12))
 
         var count = 0
         world.query(Name.self, Pos.self, Vel.self).getWithIds()
@@ -126,8 +126,8 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testQueryMut() throws {
         var world = World()
 
-        let id1 = try world.spawn(Pos(x: 0, y: 10))
-        let id2 = try world.spawn(Vel(x: 4, y: 11), Pos(x: 9, y: 15))
+        let id1 = world.spawn(Pos(x: 0, y: 10))
+        let id2 = world.spawn(Vel(x: 4, y: 11), Pos(x: 9, y: 15))
 
         world.queryMut(Pos.self)
             .mutate { (pos: inout Pos) in
@@ -149,7 +149,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     func testReuseEntityIds() throws {
         var world = World()
 
-        let id1 = try world.spawn(Pos(x: 0, y: 10))
+        let id1 = world.spawn(Pos(x: 0, y: 10))
         world.setFlag(entity: id1, Flags.Player)
         XCTAssertEqual(world.entityCount, 1)
         XCTAssertEqual(world.queryIds().map { $0 }, [0])
@@ -168,7 +168,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
             .forEach { (_: Pos) in count += 1 }
         XCTAssertEqual(count, 0)
         
-        let id2 = try world.spawn(Pos(x: 0, y: 10))
+        let id2 = world.spawn(Pos(x: 0, y: 10))
         XCTAssertEqual(id2, id1)
         XCTAssertEqual(world.entityCount, 1)
         XCTAssertEqual(world.queryIds().map { $0 }, [0])
