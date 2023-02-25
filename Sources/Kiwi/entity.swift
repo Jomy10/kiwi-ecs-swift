@@ -59,6 +59,7 @@ internal extension EntityStore {
 			self.entities.append(Entity(arch: archId, row: archRow))
 		} else {
 			self.entities[Int(entId)] = Entity(arch: archId, row: archRow)
+			self.resetFlags(entity: entId)
 		}
 	} 
 
@@ -86,7 +87,7 @@ internal extension EntityStore {
 	@inlinable
 	func entityCount() -> Int {
 		// specify Int() to reduce comle time
-		return (0...Int(self.entities.count)).reduce(0) { (count: Int, id: Int) in
+		return (0..<Int(self.entities.count)).reduce(0) { (count: Int, id: Int) in
 			if self.deadEntities.contains(EntityId(id)) {
 				return count
 			} else {
@@ -123,5 +124,18 @@ internal extension EntityStore {
 		}
 
 		self.flags[Int(entity)].remove(Int(flag))
+	}
+
+	@inlinable
+	mutating func resetFlags(entity: EntityId) {
+		self.flags[Int(entity)].clear()
+	}
+
+	@inlinable
+	func entityIds() -> some Sequence<EntityId> {
+		(0..<self.nextId)
+			.filter { id in
+				!self.deadEntities.contains(id)
+			}
 	}
 }

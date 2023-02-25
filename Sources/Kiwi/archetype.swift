@@ -22,8 +22,11 @@ struct ComponentColumn<T> {
 struct Archetype {
 	/// { id => ComponentColumn }
 	private var components: [ComponentId: UnsafeMutableRawPointer]
+	/// Used only for finding new ids for the next entity added
 	private var availableEntityRows: [ArchRowId]
 	/// index into this array = ArchRowId
+	/// when entry is nil, the ArchRowId is available. Used to filter the
+	/// components arrrays to contain only alive entities
 	private var entities: [EntityId?]
     private let allocatedComponentsBuffer: UnsafeMutablePointer<ComponentColumn<Any>>
 }
@@ -126,27 +129,5 @@ internal extension Archetype {
 			)
 		}
 		return MutableComponentsIterator(entities: self.entities.lazy, components: componentsPtrs)
-	}
-
-	@available(*, deprecated)
-	func components<T: Component>(_: T.Type) -> some Sequence<T> {
-		zip(
-			self.entities,
-			self.components[T.id]!.bindMemory(to: ComponentColumn<T>.self, capacity: 1)
-				.pointee.components
-		).lazy
-				.filter { (entId, component) in entId != nil }
-				.map { (entId, component) in component }
-	}
-
-	@available(*, deprecated)
-	func componentsAndIds<T: Component>(_: T.Type) -> some Sequence<(EntityId, T)> {
-		zip(
-			self.entities,
-			self.components[T.id]!.bindMemory(to: ComponentColumn<T>.self, capacity: 1)
-				.pointee.components
-		).lazy
-				.filter { (entId, component) in entId != nil }
-				.map { (entId, component) in (entId!, component) }
 	}
 }

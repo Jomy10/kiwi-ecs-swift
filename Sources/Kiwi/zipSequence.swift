@@ -1,4 +1,4 @@
-
+@available(*, deprecated)
 struct VariableZip1Sequence<
 	FirstElement, FirstElementSequence: Sequence<FirstElement>,
 	Element, ElementSequence: Sequence<Element>

@@ -30,26 +30,6 @@ internal extension ArchStore {
 		}
 	}
 
-	/// components should be a sorted array
-	@inlinable
-	@available(*, deprecated)
-	func getArchetypeIdMaybe(components: [ComponentId]) -> ArchetypeId? {
-		self.compMap[components]
-	}
-
-	/// Creates a new archetype id. Don't call this without checking if the id exists;
-	/// call `getArchetypeId` first.
-	/// 
-	/// - `components`: sorted
-	/// - returns: the new id of the archetype
-	// @inlinable
-	// mutating func newArchetype(components: [ComponentId], sizes: [ComponentId: Int]) -> ArchetypeId {
-	// 	let id = self.archetypes.count
-	// 	self.compMap[components] = ArchetypeId(id)
-	// 	self.archetypes.append(Archetype(components: components))
-	// 	return ArchetypeId(id)
-	// }
-
 	// `components` should be a sorted array
 	@inlinable
 	mutating func getArchetypeId(components: [ComponentId]) -> ArchetypeId {
@@ -62,9 +42,5 @@ internal extension ArchStore {
 			self.compMap[components] = id
 			return id
 		}
-	}
-
-	func dealloc() {
-		todo()
 	}
 }

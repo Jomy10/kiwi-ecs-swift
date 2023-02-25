@@ -1,6 +1,3 @@
-func todo(_ s: String = "") { fatalError("TODO \(s)") }
-func todo<T>(_ s: String = "") -> T { fatalError("TODO \(s)") }
-
 public struct World {
 	internal var entityStore: EntityStore
 	internal var archStore: ArchStore
@@ -70,7 +67,7 @@ public struct World {
 	}
 
 	/// The amount of entities that are alive
-	public func entityCount() -> Int {
+	public var entityCount: Int {
 		self.entityStore.entityCount()
 	}
 
@@ -88,11 +85,11 @@ public struct World {
 	}
 
 	/// Sets a flag for an entity
-	public mutating func setFlag<F: RawRepresentable>(of entity: EntityId, _ flag: F) where F.RawValue == FlagId {
+	public mutating func setFlag<F: RawRepresentable>(entity: EntityId, _ flag: F) where F.RawValue == FlagId {
 		self.entityStore.setFlag(entity: entity, flag.rawValue)
 	}
 
-	public mutating func removeFlag<F: RawRepresentable>(of entity: EntityId, _ flag: F) where F.RawValue == FlagId {
+	public mutating func removeFlag<F: RawRepresentable>(entity: EntityId, _ flag: F) where F.RawValue == FlagId {
 		self.entityStore.removeFlag(entity: entity, flag.rawValue)
 	}
 
@@ -106,6 +103,10 @@ public struct World {
 //=========
 
 extension World {
+	public func queryIds() -> some Sequence<(EntityId)> {
+		return self.entityStore.entityIds()
+	}
+
 	public func query(_ components: Component.Type...) -> some Sequence<(EntityId, ContiguousArray<UnsafeRawPointer>)> {
 		self.archStore.compMap.lazy
 			.filter { (archComponents, _) in

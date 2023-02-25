@@ -48,4 +48,11 @@ extension Bitmap {
 
 		self.bits[idx] &= ~(1 << idx2)
 	}
+
+	@inlinable
+	mutating func clear() {
+		for i in 0..<self.bits.count {
+			self.bits[i] = 0
+		}
+	}
 }
