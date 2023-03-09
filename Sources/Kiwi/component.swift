@@ -1,7 +1,3 @@
-//============
-// Components
-//============
-
 public typealias ComponentId = Int
 
 public protocol Component {
@@ -25,11 +21,3 @@ extension Component {
 		MemoryLayout<Self>.size
 	}
 }
-
-//=======
-// Flags
-//=======
-
-public typealias FlagId = UInt32
-
-public protocol Flags: RawRepresentable where RawValue == FlagId {}

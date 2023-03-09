@@ -86,7 +86,7 @@ internal extension EntityStore {
 
 	@inlinable
 	func entityCount() -> Int {
-		// specify Int() to reduce comle time
+		// specify Int() to reduce compile time
 		return (0..<Int(self.entities.count)).reduce(0) { (count: Int, id: Int) in
 			if self.deadEntities.contains(EntityId(id)) {
 				return count

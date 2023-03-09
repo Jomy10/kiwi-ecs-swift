@@ -102,14 +102,14 @@ internal extension Archetype {
 	}
 
 	@inlinable
-	mutating func getComponentMut<T: Component>(row: ArchRowId, _ body: (UnsafeMutablePointer<T>) -> ()) throws {
+	mutating func getComponentMut<T: Component>(row: ArchRowId, _ body: (UnsafeMutablePointer<T>) throws -> ()) throws {
 		guard let compColPtr = self.components[T.id]?.bindMemory(to: ComponentColumn<T>.self, capacity: 1) else {
 			throw KiwiError(.EntityDoesNotHaveComponent, message: "Component (\(T.id)) cannot be assigned to the entity because it does not have the specified component")
 		}
 
-		compColPtr.pointee.components.withUnsafeMutableBufferPointer { componentsPtr in
+		try compColPtr.pointee.components.withUnsafeMutableBufferPointer { componentsPtr in
 			// row should always be valid
-			body(&componentsPtr[Int(row)])
+			try body(&componentsPtr[Int(row)])
 		}
 	}
 

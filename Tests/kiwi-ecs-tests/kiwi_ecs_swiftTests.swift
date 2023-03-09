@@ -1,9 +1,3 @@
- #if os(Linux)
-    import Glibc
-#else
-    import Darwin.C
-#endif
-
 import XCTest
 @testable import Kiwi
 
@@ -81,7 +75,7 @@ final class kiwi_ecs_swiftTests: XCTestCase {
     }
 
     enum Flags: FlagId {
-        typealias RawValue = FlagId
+        // typealias RawValue = FlagId
         case Player
         case Enemy
         case Wall
@@ -101,6 +95,25 @@ final class kiwi_ecs_swiftTests: XCTestCase {
         // print("== Wall ==")
         world.removeFlag(entity: id, Flags.Player)
         XCTAssert(world.hasFlag(entity: id, Flags.Wall))
+    }
+
+    func testHasFlags() throws {
+        var world = World()
+
+        let id = world.spawn()
+        world.setFlag(entity: id, Flags.Player)
+        world.setFlag(entity: id, Flags.Enemy)
+        let oid = world.spawn()
+        world.setFlag(entity: oid, Flags.Player)
+
+        var i = 0
+        world.queryIds()
+            .filter { world.hasFlags(entity: $0, Flags.Player, Flags.Enemy) }
+            .forEach { id2 in
+                XCTAssertEqual(id, id2)
+                i += 1
+            }
+        XCTAssertEqual(i, 1)
     }
 
     func testQuery() throws {

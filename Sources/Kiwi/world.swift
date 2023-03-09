@@ -1,3 +1,5 @@
+// TODO: RcWorld -> class wrapper for World (generate with ruby script?)
+
 public struct World {
 	internal var entityStore: EntityStore
 	internal var archStore: ArchStore
@@ -35,8 +37,9 @@ public struct World {
 
 	/// Get a mutable pointer to a component
 	///
-	/// - Attention: fatal error if the entity does not exist or the entity does not have the component
-	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (UnsafeMutablePointer<T>) -> ()) throws {
+	/// - Attention: fatal error if the entity does not exist
+	/// - Throws: if the entity does not have the component
+	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (UnsafeMutablePointer<T>) throws -> ()) throws {
 		let entity: Entity = self.entityStore.get(entity: entId)
 		try self.archStore.getMut(archetype: entity.archId) { archPtr in
 			try archPtr.pointee.getComponentMut(row: entity.archRow, body)
@@ -47,13 +50,11 @@ public struct World {
 	///
 	/// - Attention: fatal error if the entity does not exist or the entity does not have the component
 	@inlinable
-	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (inout T) -> ()) throws {
+	public mutating func getComponent<T: Component>(of entId: EntityId, _ body: (inout T) throws -> ()) throws {
 		try self.getComponent(of: entId) { (ptr: UnsafeMutablePointer<T>) in
-			body(&ptr.pointee)
+			try body(&ptr.pointee)
 		}
 	}
-
-	
 
 	/// Kills an entity
 	///
@@ -84,48 +85,22 @@ public struct World {
 		self.entityStore.hasFlag(entity: entity, flag.rawValue)
 	}
 
+	public func hasFlags<F: RawRepresentable>(entity: EntityId, _ flags: F...) -> Bool where F.RawValue == FlagId {
+		flags.allSatisfy { self.entityStore.hasFlag(entity: entity, $0.rawValue) }
+	}
+
 	/// Sets a flag for an entity
 	public mutating func setFlag<F: RawRepresentable>(entity: EntityId, _ flag: F) where F.RawValue == FlagId {
 		self.entityStore.setFlag(entity: entity, flag.rawValue)
 	}
 
+	/// Remove a flag from an entity
 	public mutating func removeFlag<F: RawRepresentable>(entity: EntityId, _ flag: F) where F.RawValue == FlagId {
 		self.entityStore.removeFlag(entity: entity, flag.rawValue)
 	}
-
+	
+	/// Cleans up memory related to the world
 	public mutating func destroy() {
 		self.archStore.deallocArchetypes()
-	}
-}
-
-//=========
-// Queries
-//=========
-
-extension World {
-	public func queryIds() -> some Sequence<(EntityId)> {
-		return self.entityStore.entityIds()
-	}
-
-	public func query(_ components: Component.Type...) -> some Sequence<(EntityId, UnsafeBufferPointer<UnsafeRawPointer>)> {
-		self.archStore.compMap.lazy
-			.filter { (archComponents, _) in
-				components.map { $0.id }.allSatisfy(archComponents.contains)
-			}.flatMap { (_, archId: ArchetypeId) in
-				self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
-					return archPtr.pointee.components(components.map { ($0.id, $0.__componentSize) } )
-				}
-			}
-	}
-
-	public func queryMut(_ components: Component.Type...) -> some Sequence<(EntityId, UnsafeMutableBufferPointer<UnsafeMutableRawPointer>)> {
-		self.archStore.compMap.lazy
-			.filter { (archComponents, _) in
-				components.map { $0.id }.allSatisfy(archComponents.contains)
-			}.flatMap { (_, archId: ArchetypeId) in
-				self.archStore.get(archetype: archId) { (archPtr: UnsafePointer<Archetype>) in
-					return UnsafeMutablePointer(mutating: archPtr).pointee.componentsMut(components.map { ($0.id, $0.__componentSize)})
-				}
-			}
 	}
 }
