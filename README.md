@@ -3,7 +3,8 @@
 Kiwi is a performant and versatile entity component system focussing on fast
 iteration and a nice api.
 
-To get started, navigate to the next pages:
+To get started, read the [usage guide](#usage) below.
+A documentation site will be set up later.
 
 ## Usage
 

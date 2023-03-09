@@ -1,5 +1,12 @@
 // TODO: RcWorld -> class wrapper for World (generate with ruby script?)
 
+/// Base object storing all objects in the ecs
+///
+/// When creating a new world, memory has to be cleaned up as well
+/// ```swift
+/// var world = World()
+/// defer { world.destroy() } // clean up memory
+/// ```
 public struct World {
 	internal var entityStore: EntityStore
 	internal var archStore: ArchStore
@@ -25,7 +32,7 @@ public struct World {
 		return entId
 	}
 
-	//// Get a component of an entity
+	/// Get a component of an entity
 	///
 	/// - Attention: fatal error if the entity does not exist or the entity does not have the component
 	public func getComponent<T: Component>(of entId: EntityId) throws -> T {
