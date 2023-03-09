@@ -1,1 +1,3 @@
 Sources/kiwi_ecs/generated/* linguist-generated
+
+*.swift.template linguist-language=swift
