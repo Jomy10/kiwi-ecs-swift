@@ -8,6 +8,23 @@ A documentation site will be set up later.
 
 ## Usage
 
+Add the library to your `Package.swift`
+
+```swift
+let package = Package(
+  // ...
+  dependencies: [
+    .package(name: "Kiwi", "https://github.com/jomy10/kiwi-ecs-swift", branch: "master")
+  ],
+  targets: [
+    .target(
+      name: "You target",
+      dependencies: ["Kiwi"]
+    )
+  ]
+)
+```
+
 ### The world
 
 The world is the main object that controls the ecs.
@@ -55,6 +72,12 @@ world.spawn(Position(x: 3, y: 5), Velocity(x: 1.5, y: 0.0))
 ```
 
 The `world.spawn(_ components: Component...)` function will return the id of the newly spawned entity.
+
+Killing an entity can be done using `world.kill(entity id: EntityId)`:
+
+```swift
+world.kill(entity: id)
+```
 
 ### Systems
 

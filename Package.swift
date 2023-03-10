@@ -17,13 +17,13 @@ let package = Package(
     targets: [
         .target(
             name: "Kiwi",
-            dependencies: [],
-            swiftSettings: [.unsafeFlags([
-                "-Xfrontend",
-                "-warn-long-function-bodies=100",
-                "-Xfrontend",
-                "-warn-long-expression-type-checking=100",
-            ])]
+            dependencies: []
+            // swiftSettings: [.unsafeFlags([
+            //     "-Xfrontend",
+            //     "-warn-long-function-bodies=100",
+            //     "-Xfrontend",
+            //     "-warn-long-expression-type-checking=100",
+            // ])]
         ),
         .executableTarget(
             name: "Benchmarks",
