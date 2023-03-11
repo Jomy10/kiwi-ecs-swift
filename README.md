@@ -14,12 +14,14 @@ Add the library to your `Package.swift`
 let package = Package(
   // ...
   dependencies: [
-    .package(name: "Kiwi", "https://github.com/jomy10/kiwi-ecs-swift", branch: "master")
+    .package("https://github.com/jomy10/kiwi-ecs-swift", branch: "master")
   ],
   targets: [
     .target(
       name: "You target",
-      dependencies: ["Kiwi"]
+      dependencies: [
+        .targget(name: "Kiwi", package: ["kiwi-ecs-swift"])
+      ]
     )
   ]
 )
