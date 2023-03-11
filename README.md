@@ -20,7 +20,7 @@ let package = Package(
     .target(
       name: "You target",
       dependencies: [
-        .targget(name: "Kiwi", package: ["kiwi-ecs-swift"])
+        .target(name: "Kiwi", package: "kiwi-ecs-swift")
       ]
     )
   ]
