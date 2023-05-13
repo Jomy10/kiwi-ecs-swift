@@ -10,17 +10,17 @@ A documentation site will be set up later.
 
 Add the library to your `Package.swift`
 
-```swift
+```diff
 let package = Package(
   // ...
   dependencies: [
-    .package("https://github.com/jomy10/kiwi-ecs-swift", branch: "master")
++    .package(url: "https://github.com/jomy10/kiwi-ecs-swift", branch: "master")
   ],
   targets: [
     .target(
       name: "You target",
       dependencies: [
-        .target(name: "Kiwi", package: "kiwi-ecs-swift")
++        .target(name: "Kiwi", package: "kiwi-ecs-swift")
       ]
     )
   ]
@@ -161,7 +161,7 @@ world.removeFlag(entity: id, Flags.Player)
 world.hasFlag(entity: id, Flags.Player)
 ```
 
-#### Fltering queries with flags
+#### Filtering queries with flags
 
 ```swift
 world.query(Position.self)
